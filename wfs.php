@@ -5,8 +5,8 @@ Plugin URI: https://github.com/Machigatta/wshbr-wordpress-featured-slider
 Description: wshbr.de - Provide a slider for the frontpage
 Author: Machigatta
 Author URI: https://machigatta.com/
-Version: 0.1
-Stable Tag: 0.1
+Version: 0.2
+Stable Tag: 1.0
 */
 
 /* Load translation, if it exists */
@@ -25,27 +25,13 @@ function hotStuff_meta_custom() {
 		$defaults = get_option('hotStuffDefaults'.ucfirst($t));
 		if (!isset($defaults['activeMetaBox']) || $defaults['activeMetaBox'] == 'active') {
 			add_meta_box('hotstuffdiv', __('Slider','post-expirator'), 'hotStuff_meta_box', $t, 'side', 'core'); //slider meta
-			add_meta_box('hotstuffdiv_imdb', __('IMDB','post-expirator'), 'hotStuff_imdb_box', $t, 'side', 'core'); //the-movie-db link
 			add_meta_box('hotstuffreview', __('Review','post-expirator'), 'hotStuff_review_meta_box', $t, 'normal', 'core'); //is-review
-			add_meta_box('hotstuffsources', __('Quellen','post-expirator'), 'hotStuff_quellen_meta_box', $t, 'normal', 'core'); //quellen
 		}
 	}
 	
 	
 }
 add_action ('add_meta_boxes','hotStuff_meta_custom');
-// function hotStuff_quellen_meta_box($post){
-// 	echo "<h3>Kommaseperiert: Link1, Link2, Link3</h3>";
-// 	$content = get_post_meta($post->ID,"quellenAngaben",true);
-// 	$editor_id = "quellenAngaben";
-// 	$settings = array( 
-// 	'tinymce' => array( 'buttons' => 'a'),
-// 	"textarea_rows"=>"2",
-// 	'media_buttons' => false
-// 	);
-// 	wp_editor( $content, $editor_id, $settings );
-// 	echo "<textarea id='quellePost' name='quellePost' style='display:none;'>".$content."</textarea>";
-// }
 function hotStuff_review_meta_box($post) { 
 	
 	$isReview = get_post_meta($post->ID,"isReview",true);
@@ -100,34 +86,7 @@ function hotStuff_meta_box($post) {
 	_e( 'Upload image' ); 
 	echo "\" /><input type='hidden' name='image_attachment_id' id='image_attachment_id' value='".get_post_meta( $post->ID,"sliderImage",true )."'></center></div></div>";
 }
-function hotStuff_imdb_box($post) { 
-	// Get default month
-	$imdbvalue = get_post_meta($post->ID,"imdb_id",true);
-	
-	echo "<div style='width:100%'>
-			<p>
-				Hier den Movie-DB-Link eintragen:
-			</p>
-			<input type='text' name='imdb_id' id='imdb_id' style='width:100%' value='".$imdbvalue."'>
-			<p>
-				Bsp: - https://www.themoviedb.org/tv/61555-the-missing
-			</p>
-		</div>";
-}
-add_action( 'save_post', 'hotStuff_imdb_data' );
 add_action( 'save_post', 'hotStuff_field_data' );
-function hotStuff_imdb_data($post_id){
-    // check if this isn't an auto save
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
-        return;
-    // security check
-    if ( !wp_verify_nonce( $_POST['hotStuff_nonce'], plugin_basename( __FILE__ ) ) )
-        return;
-	
-	if ( isset( $_POST['imdb_id'] ) ) :
-		update_post_meta( $post_id, 'imdb_id', $_POST['imdb_id'] );
-	endif;        
-}
 function hotStuff_field_data($post_id) {
 	    // check if this isn't an auto save
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
