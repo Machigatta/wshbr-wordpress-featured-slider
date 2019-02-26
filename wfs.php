@@ -5,67 +5,28 @@ Plugin URI: https://github.com/Machigatta/wshbr-wordpress-featured-slider
 Description: wshbr.de - Provide a slider for the frontpage
 Author: Machigatta
 Author URI: https://machigatta.com/
-Version: 0.2
+Version: 0.3
 Stable Tag: 1.0
 */
 
-/* Load translation, if it exists */
-function hotStuff_init() {
+function wfs_init() {
 	$plugin_dir = basename(dirname(__FILE__));
-	load_plugin_textdomain( 'hotStuff', null, $plugin_dir.'/languages/' );
+	load_plugin_textdomain( 'wfs', null, $plugin_dir.'/languages/' );
 }
-add_action('plugins_loaded', 'hotStuff_init');
-/**
- * Adds hooks to get the meta box added to pages and custom post types
- */
-function hotStuff_meta_custom() {
-	$custom_post_types = get_post_types();
-	array_push($custom_post_types,'page');
-	foreach ($custom_post_types as $t) {
-		$defaults = get_option('hotStuffDefaults'.ucfirst($t));
-		if (!isset($defaults['activeMetaBox']) || $defaults['activeMetaBox'] == 'active') {
-			add_meta_box('hotstuffdiv', __('Slider','post-expirator'), 'hotStuff_meta_box', $t, 'side', 'core'); //slider meta
-			add_meta_box('hotstuffreview', __('Review','post-expirator'), 'hotStuff_review_meta_box', $t, 'normal', 'core'); //is-review
-		}
-	}
-	
-	
+add_action('plugins_loaded', 'wfs_init');
+
+function wfs_meta_custom() {
+	add_meta_box('wfsdiv', __('wshbr-slider','post-expirator'), 'wfs_meta_box', 'post', 'side', 'core'); //slider meta
 }
-add_action ('add_meta_boxes','hotStuff_meta_custom');
-function hotStuff_review_meta_box($post) { 
-	
-	$isReview = get_post_meta($post->ID,"isReview",true);
+add_action ('add_meta_boxes','wfs_meta_custom');
+
+
+function wfs_meta_box($post) { 
 	// Get default month
-	echo "<div>
-	<input id='isReview' type=\"checkbox\" name='isReview' value='true'";
-	echo ($isReview == "1") ? "checked='checked'" : "";
-	echo ">markiert als Review
-	<div id='reviewOptions'>
-	<hr>
-	<h4>Wertung (bis 10, bsp. 5,6,7,5.5,8.5)</h4>
-	<input type='text' name='reviewValue' value='".get_post_meta($post->ID,"reviewValue")[0] ."' style='width:100%'>
-	<h4>Kurzbeschreibung</h4>
-	<textarea rows=\"10\" cols=\"30\" name=\"reviewShort\" style='width:100%'>".get_post_meta($post->ID,"reviewShort",true)."</textarea></div>
-	</div>";
-}
-/**
- * Actually adds the meta box
- */
-function hotStuff_meta_box($post) { 
-	// Get default month
-	wp_nonce_field( plugin_basename( __FILE__ ), 'hotStuff_nonce' );
+	wp_nonce_field( plugin_basename( __FILE__ ), 'wfs_nonce' );
 	$isSlider = get_post_meta($post->ID,"isSlider",true);
 	
 	wp_enqueue_media();	
-	echo "<div>
-	<h3><span class=\"dashicons dashicons-controls-repeat\"></span> AutoShared</h3>
-	<button class='button' disabled='disabled' style='width:100%;";
-	if(get_post_meta($post->ID,"dcShared")[0] == "1"){
-		echo "background-color:green !important;color:white !important;";
-	}else{
-		echo "background-color:red !important;color:white !important;";
-	}
-	echo"'>Shared</button></div>";
 	echo "<div><h3><span class=\"dashicons dashicons-format-gallery\"></span> Slider</h3>
 	<input id='isNoSlider' type=\"radio\" name='isSlider' value='false'";
 	echo ($isSlider == "0" || $isSlider == "") ? "checked" : "";
@@ -86,26 +47,19 @@ function hotStuff_meta_box($post) {
 	_e( 'Upload image' ); 
 	echo "\" /><input type='hidden' name='image_attachment_id' id='image_attachment_id' value='".get_post_meta( $post->ID,"sliderImage",true )."'></center></div></div>";
 }
-add_action( 'save_post', 'hotStuff_field_data' );
-function hotStuff_field_data($post_id) {
+add_action( 'save_post', 'wfs_field_data' );
+function wfs_field_data($post_id) {
 	    // check if this isn't an auto save
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
         return;
     // security check
-    if ( !wp_verify_nonce( $_POST['hotStuff_nonce'], plugin_basename( __FILE__ ) ) )
+    if ( !wp_verify_nonce( $_POST['wfs_nonce'], plugin_basename( __FILE__ ) ) )
         return;
 	
 	if ( isset( $_POST['image_attachment_id'] ) ) :
 		update_post_meta( $post_id, 'sliderImage', absint( $_POST['image_attachment_id'] ) );
 	endif;
 	
-	
-    // further checks if you like, 
-    // for example particular user, role or maybe post type in case of custom post types
-	if(get_post_meta($post_id,"dcShared",true) != "1"){
-		update_post_meta( $post_id, 'dcShared', "0");
-	}
-    
     // now store data in custom fields based on checkboxes selected
     if ( isset( $_POST['isSlider'] )){
 		if($_POST['isSlider'] == "true"){
@@ -120,59 +74,21 @@ function hotStuff_field_data($post_id) {
 	if ( isset( $_POST['quellePost'] ) ) :
 		update_post_meta( $post_id, 'quellenAngaben', $_POST['quellePost']);
 	endif;
-	if ( isset( $_POST['isReview'] ) ) :
-		if($_POST['isReview'] == "true"){
-			update_post_meta( $post_id, 'isReview', "1");
-			update_post_meta( $post_id, 'reviewShort', $_POST['reviewShort']);
-			update_post_meta( $post_id, 'reviewValue', $_POST['reviewValue']);
-		}else{
-			update_post_meta( $post_id, 'isReview', "0");	
-			update_post_meta( $post_id, 'reviewShort', $_POST['reviewShort']);
-			update_post_meta( $post_id, 'reviewValue', $_POST['reviewValue']);
-		}
-	endif;
-        
 }
-add_action('admin_init', 'wshbr_config_init');
-function wshbr_config_init(){
-	add_option('slider_option');
-	wp_register_style('mainCss', plugins_url('hotStuff.css',__FILE__ ));
-	wp_enqueue_style('mainCss');
+
+add_action('wp_enqueue_scripts', 'wfs_add_styles_scripts');
+function wfs_add_styles_scripts()
+{
+	$options = get_option('wfs_settings');
+	wp_enqueue_style('wfs-font', 'https://fonts.googleapis.com/css?family=Open+Sans');
+	wp_enqueue_style('wfs-style', trailingslashit(plugin_dir_url(__FILE__)) . 'assets/css/style.css', array(), "0.0.1");
 }
+
 add_action( 'admin_footer', 'media_selector_print_scripts' );
 function media_selector_print_scripts() {
 	$my_saved_attachment_post_id = get_option( 'media_selector_attachment_id', 0 );
 	?><script type='text/javascript'>
 		jQuery( document ).ready( function( $ ) {
-			if(jQuery('#isNoSlider').is(':checked')) { jQuery('#sliderOptions').hide(); }
-			jQuery('input[type=radio][name=isSlider]').change(function() {
-				if (this.value == 'false') {
-					jQuery('#sliderOptions').hide();
-				}
-				else if (this.value == 'true') {
-					jQuery('#sliderOptions').show();
-				}
-			});
-			setTimeout(function() {
-				jQuery("#hotstuffsources").find("div[role='button']").not("div[aria-label='Insert/edit link'], div[aria-label='Remove link']").hide();
-				jQuery("#hotstuffsources").find("#wp-quellenAngaben-editor-tools").hide();
-				jQuery("#hotstuffsources").find("div[role=\"toolbar\"]:eq(1)").hide();
-				tinymce.get("quellenAngaben").on('change', function(e) {
-					jQuery("#quellePost").html(tinyMCE.get("quellenAngaben").getContent());
-				});
-				
-			}, 2000);
-			
-			if(jQuery('#isReview').is(':checked')) { jQuery('#reviewOptions').show(); }else{ jQuery('#reviewOptions').hide(); }
-			jQuery('input[type=checkbox][name=isReview]').change(function() {
-				console.log(this.value);
-				if ($(this).is(':checked')) {
-					jQuery('#reviewOptions').show();
-				}
-				else{
-					jQuery('#reviewOptions').hide();
-				}
-			});
 			// Uploading files
 			var file_frame;
 			if(wp.media){
@@ -221,3 +137,54 @@ function media_selector_print_scripts() {
 		});
 	</script><?php
 } 
+
+function wfs_show(){
+	$the_query = new WP_Query( array(
+		'post_type' => 'post',
+		'post_status' => 'publish',
+		'posts_per_page' => '6',
+		'meta_query' => array(
+			array(
+				'key' => 'isSlider',
+				'value' => '1',
+				'compare' => '='
+			)
+		),
+		'orderby' => 'id')
+	);
+
+	if ( $the_query->have_posts() ) {
+		echo '<div class="highlight_master">';
+		while ( $the_query->have_posts() ) {
+			echo '<div class="highlight" style="height: 200px;overflow: hidden;position: relative;">';
+			$the_query->the_post();
+			
+			 $sliderMeta = get_post_meta(get_the_ID(),'sliderImage');
+			 $sliderCaption = get_post_meta(get_the_ID(),'sliderCaption')[0];
+			 if($sliderCaption == ""){
+				 $sliderCaption = get_the_title();
+			 }
+			if(!empty($sliderMeta)){
+				echo '<a href="'. esc_url( get_permalink()).'" target="_blank">'."<img id='image-preview' class='slider-preview' src='".wp_get_attachment_url( $sliderMeta[0] )."' 
+				style='left: 50%;top: 50%;transform: translate(-50%, -50%);height: 100%;position: absolute;width: auto;'></a>";
+				echo '<div class="caption">
+						<div class="blur"></div>
+							<div class="caption-text">
+								<h5 style="border-top:2px solid #06b48f; padding:10px;" class="hwrap">'.$sliderCaption.'</h5>
+							</div>
+					</div>';
+			}else{
+				echo "no preview";
+			}
+
+
+			echo '</div>';
+		}
+		echo '</div>';
+		/* Restore original Post Data */
+		wp_reset_postdata();
+		echo '</div>';
+	} else {
+		// no posts found
+	}
+}
