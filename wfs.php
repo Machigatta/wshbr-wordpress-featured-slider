@@ -5,7 +5,7 @@ Plugin URI: https://github.com/Machigatta/wshbr-wordpress-featured-slider
 Description: wshbr.de - Provide a slider for the frontpage
 Author: Machigatta
 Author URI: https://machigatta.com/
-Version: 0.3
+Version: 1.0
 Stable Tag: 1.0
 */
 
@@ -81,7 +81,7 @@ function wfs_add_styles_scripts()
 {
 	$options = get_option('wfs_settings');
 	wp_enqueue_style('wfs-font', 'https://fonts.googleapis.com/css?family=Open+Sans');
-	wp_enqueue_style('wfs-style', trailingslashit(plugin_dir_url(__FILE__)) . 'assets/css/style.css', array(), "0.0.1");
+	wp_enqueue_style('wfs-style', trailingslashit(plugin_dir_url(__FILE__)) . 'assets/css/style.css', array(), "0.0.6");
 }
 
 add_action( 'admin_footer', 'media_selector_print_scripts' );
@@ -156,7 +156,7 @@ function wfs_show(){
 	if ( $the_query->have_posts() ) {
 		echo '<div class="highlight_master">';
 		while ( $the_query->have_posts() ) {
-			echo '<div class="highlight" style="height: 200px;overflow: hidden;position: relative;">';
+			echo '<div class="highlight">';
 			$the_query->the_post();
 			
 			 $sliderMeta = get_post_meta(get_the_ID(),'sliderImage');
@@ -165,12 +165,11 @@ function wfs_show(){
 				 $sliderCaption = get_the_title();
 			 }
 			if(!empty($sliderMeta)){
-				echo '<a href="'. esc_url( get_permalink()).'" target="_blank">'."<img id='image-preview' class='slider-preview' src='".wp_get_attachment_url( $sliderMeta[0] )."' 
-				style='left: 50%;top: 50%;transform: translate(-50%, -50%);height: 100%;position: absolute;width: auto;'></a>";
+				echo '<a href="'. esc_url( get_permalink()).'" target="_blank">'."<img id='image-preview' class='slider-preview' src='".wp_get_attachment_url( $sliderMeta[0] )."'></a>";
 				echo '<div class="caption">
 						<div class="blur"></div>
 							<div class="caption-text">
-								<h5 style="border-top:2px solid #06b48f; padding:10px;" class="hwrap">'.$sliderCaption.'</h5>
+								<h5 class="hwrap">'.$sliderCaption.'</h5>
 							</div>
 					</div>';
 			}else{
